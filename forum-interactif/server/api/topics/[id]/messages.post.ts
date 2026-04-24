@@ -36,5 +36,8 @@ export default defineWrappedResponseHandler(async (event) => {
     [topicId]
   )
 
+  // Notifie tous les clients connectés
+  broadcastWs({ type: 'new-message', topicId: Number(topicId) })
+
   return { id: result.insertId }
 })
