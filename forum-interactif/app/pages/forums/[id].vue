@@ -28,6 +28,24 @@ const { data, refresh } = await useFetch<ApiResponse>(
 
 const forum = computed(() => data.value?.forum)
 const topics = computed(() => data.value?.topics ?? [])
+
+//  WebSocket temps réel 
+onMounted(() => {
+  const isSecure = location.protocol === 'https:'
+  const url = (isSecure ? 'wss://' : 'ws://') + location.host + '/_ws'
+  const ws = new WebSocket(url)
+
+  ws.addEventListener('message', (event) => {
+    try {
+      const data = JSON.parse(event.data)
+      if (data.type === 'new-topic' && String(data.forumId) === forumId) {
+        refresh()
+      }
+    } catch {}
+  })
+
+  onUnmounted(() => ws.close())
+})
 const pagination = computed(() => data.value?.pagination)
 
 useHead(() => ({ title: `${forum.value?.name ?? 'Forum'} — Forum Interactif` }))

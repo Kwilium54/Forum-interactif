@@ -38,5 +38,8 @@ export default defineWrappedResponseHandler(async (event) => {
     [topicId, session.user.id, message.trim()]
   )
 
+  // Notifie tous les clients connectés
+  broadcastWs({ type: 'new-topic', forumId: Number(forumId), topicId })
+
   return { id: topicId, title: title.trim() }
 })

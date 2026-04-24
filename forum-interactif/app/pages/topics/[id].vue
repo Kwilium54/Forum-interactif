@@ -35,6 +35,24 @@ watch(page, async (newPage) => {
   await messagesRes.refresh()
 })
 
+//  WebSocket temps réel 
+onMounted(() => {
+  const isSecure = location.protocol === 'https:'
+  const url = (isSecure ? 'wss://' : 'ws://') + location.host + '/_ws'
+  const ws = new WebSocket(url)
+
+  ws.addEventListener('message', (event) => {
+    try {
+      const data = JSON.parse(event.data)
+      if (data.type === 'new-message' && String(data.topicId) === topicId) {
+        messagesRes.refresh()
+      }
+    } catch {}
+  })
+
+  onUnmounted(() => ws.close())
+})
+
 const refreshMessages = () => messagesRes.refresh()
 
 //  Répondre 
