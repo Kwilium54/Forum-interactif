@@ -10,6 +10,7 @@ export default defineNuxtConfig({
   },
 
   modules: [
+    'nuxt-auth-utils',
     (_options, nuxt) => {
       nuxt.hooks.hook('vite:extendConfig', (config) => {
         config.plugins.push(vuetify({ autoImport: true }))
