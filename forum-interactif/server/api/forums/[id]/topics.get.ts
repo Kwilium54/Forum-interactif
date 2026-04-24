@@ -24,7 +24,7 @@ export default defineWrappedResponseHandler(async (event) => {
   const total = countRows[0].total
 
   // Sujets avec auteur + infos dernier message
-  const [rows] = await db.execute(`
+  const [rows] = await db.query(`
     SELECT
       t.id,
       t.title,
@@ -45,7 +45,7 @@ export default defineWrappedResponseHandler(async (event) => {
     WHERE t.forum_id = ?
     ORDER BY t.last_message_at DESC
     LIMIT ? OFFSET ?
-  `, [forumId, limit, offset]) as any[]
+  `, [Number(forumId), limit, offset]) as any[]
 
   return {
     forum: forums[0],
