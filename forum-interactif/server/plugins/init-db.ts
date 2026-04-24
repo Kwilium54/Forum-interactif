@@ -2,13 +2,27 @@ import mysql from 'mysql2/promise'
 import bluebird from 'bluebird'
 import bcrypt from 'bcryptjs'
 
+async function createConnectionWithRetry(options: mysql.ConnectionOptions, maxRetries = 10, delayMs = 3000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const conn = await mysql.createConnection(options)
+      return conn
+    } catch (err: any) {
+      if (attempt === maxRetries) throw err
+      console.log(`[init-db] MySQL non disponible (tentative ${attempt}/${maxRetries}), nouvelle tentative dans ${delayMs / 1000}s...`)
+      await new Promise(resolve => setTimeout(resolve, delayMs))
+    }
+  }
+  throw new Error('[init-db] Impossible de se connecter à MySQL après plusieurs tentatives')
+}
+
 export default defineNitroPlugin(async () => {
   console.log('[init-db] Initialisation de la base de données...')
 
   let connection
   try {
-    // Connexion initiale
-    connection = await mysql.createConnection({
+    // Connexion initiale avec retry
+    connection = await createConnectionWithRetry({
       host: process.env.MYSQL_HOST || 'localhost',
       port: Number(process.env.MYSQL_PORT) || 3306,
       user: process.env.MYSQL_USER || 'root',
@@ -17,8 +31,18 @@ export default defineNitroPlugin(async () => {
     })
 
     const db = process.env.MYSQL_DATABASE || 'forum'
-    await connection.execute(`CREATE DATABASE IF NOT EXISTS \`${db}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`)
-    await connection.execute(`USE \`${db}\``)
+    await connection.query(`CREATE DATABASE IF NOT EXISTS \`${db}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`)
+    await connection.end()
+
+    // Reconnexion avec la database sélectionnée
+    connection = await createConnectionWithRetry({
+      host: process.env.MYSQL_HOST || 'localhost',
+      port: Number(process.env.MYSQL_PORT) || 3306,
+      user: process.env.MYSQL_USER || 'root',
+      password: process.env.MYSQL_PASSWORD || 'root',
+      database: db,
+      Promise: bluebird,
+    })
 
     // Création des tables
     await connection.execute(`

@@ -29,6 +29,7 @@ services:
       MYSQL_USER: root
       MYSQL_PASSWORD: root
       MYSQL_DATABASE: forum
+      NUXT_SESSION_PASSWORD: forum-interactif-super-secret-32chars!!
     depends_on:
       db:
         condition: service_healthy
